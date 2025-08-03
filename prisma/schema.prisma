@@ -1,0 +1,418 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String   @unique
+  password    String?  // Made optional for OAuth users
+  
+  // OAuth fields
+  provider    String?  // 'local', 'google', 'steam'
+  providerId  String?  // OAuth provider user ID
+  avatar      String?  // Profile picture URL
+  
+  // Game stats
+  level       Int      @default(1)
+  totalScore  Int      @default(0)
+  totalShots  Int      @default(0)
+  totalHits   Int      @default(0)
+  hoursPlayed Float    @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  gameSessions       GameSession[]
+  scores            Score[]
+  achievements      UserAchievement[]
+  rewards           UserReward[]
+  prestige          UserPrestige?
+  leaderboard       Leaderboard[]
+  sensitivityProfile SensitivityProfile?
+  
+  @@map("users")
+}
+
+model GameSession {
+  id        String   @id @default(cuid())
+  userId    String
+  gameMode  String
+  duration  Int      // in seconds
+  score     Int
+  accuracy  Float
+  hits      Int
+  misses    Int
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("game_sessions")
+}
+
+model Score {
+  id         String   @id @default(cuid())
+  userId     String
+  gameMode   String
+  score      Int
+  accuracy   Float
+  reactionTime Float
+  createdAt  DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("scores")
+}
+
+// 🏆 ENHANCED ACHIEVEMENT SYSTEM
+model Achievement {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  icon        String
+  
+  // Achievement Configuration
+  category    String   // 'training', 'accuracy', 'streak', 'competition', 'social', 'progression', 'special'
+  type        String   // 'single', 'progressive', 'cumulative', 'streak', 'challenge'
+  difficulty  String   // 'bronze', 'silver', 'gold', 'platinum', 'diamond'
+  
+  // Requirements (JSON for flexibility)
+  requirement String   // JSON describing requirement criteria
+  maxProgress Int      @default(1)    // For progressive achievements
+  
+  // Rewards
+  xpReward    Int      @default(0)
+  pointReward Int      @default(0)
+  
+  // Achievement Status
+  isActive    Boolean  @default(true)
+  isHidden    Boolean  @default(false)  // Hidden until requirements are met
+  isSeasonal  Boolean  @default(false)  // Seasonal achievements
+  seasonId    String?  // Which season this belongs to
+  
+  // Unlock Requirements
+  requiresAchievement String?  // ID of achievement required to unlock this
+  minimumLevel       Int      @default(1)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userAchievements UserAchievement[]
+  rewardUnlocks    RewardUnlock[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  
+  // Progress Tracking
+  currentProgress Int      @default(0)
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  
+  // Tracking Data
+  progressData    String?  // JSON for storing progress details
+  startedAt       DateTime @default(now())
+  lastUpdated     DateTime @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// 🎁 REWARD SYSTEM
+model Reward {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  type        String   // 'crosshair', 'theme', 'title', 'badge', 'emote'
+  category    String   // 'cosmetic', 'functional', 'prestige'
+  rarity      String   // 'common', 'rare', 'epic', 'legendary', 'mythic'
+  
+  // Reward Data (JSON for different reward types)
+  rewardData  String   // JSON containing reward-specific data
+  previewUrl  String?  // URL for preview image
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  achievements RewardUnlock[]
+  userRewards  UserReward[]
+
+  @@map("rewards")
+}
+
+model RewardUnlock {
+  id            String @id @default(cuid())
+  achievementId String
+  rewardId      String
+  isAutomatic   Boolean @default(true)  // Auto-unlock on achievement completion
+
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  reward      Reward      @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
+  @@unique([achievementId, rewardId])
+  @@map("reward_unlocks")
+}
+
+model UserReward {
+  id         String   @id @default(cuid())
+  userId     String
+  rewardId   String
+  unlockedAt DateTime @default(now())
+  isEquipped Boolean  @default(false)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reward Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rewardId])
+  @@map("user_rewards")
+}
+
+// 👑 PRESTIGE SYSTEM
+model PrestigeLevel {
+  id          String @id @default(cuid())
+  level       Int    @unique
+  name        String
+  description String
+  icon        String
+  color       String   // Hex color for UI theming
+  
+  // Requirements
+  requiredLevel    Int
+  requiredXP       Int
+  requiredAchievements String? // JSON array of required achievement IDs
+  
+  // Rewards
+  prestigeRewards  String   // JSON array of prestige-specific rewards
+  
+  createdAt   DateTime @default(now())
+
+  users UserPrestige[]
+
+  @@map("prestige_levels")
+}
+
+model UserPrestige {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  currentPrestige Int      @default(0)
+  totalPrestigeXP Int      @default(0)
+  
+  prestigedAt     DateTime?
+  lastUpdated     DateTime @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prestigeLevel PrestigeLevel @relation(fields: [currentPrestige], references: [level])
+
+  @@map("user_prestige")
+}
+
+// 📅 SEASONAL SYSTEM
+model Season {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(false)
+  
+  // Season Configuration
+  seasonNumber Int      @unique
+  themeColor   String   // Hex color for season theming
+  bannerUrl    String?  // Season banner image
+  
+  createdAt   DateTime @default(now())
+
+  @@map("seasons")
+}
+
+model Leaderboard {
+  id        String   @id @default(cuid())
+  userId    String
+  gameMode  String
+  score     Int
+  rank      Int
+  period    String   // 'daily', 'weekly', 'monthly', 'all-time'
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameMode, period])
+  @@map("leaderboard")
+}
+
+// 🆕 SENSITIVITY FINDER SYSTEM MODELS
+model SensitivityProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  
+  // Current Setup
+  primaryGame       String   @default("valorant")
+  currentSensitivity Float   @default(0.5)
+  currentDPI        Int      @default(800)
+  mouseModel        String?
+  monitorSize       Int?     @default(24)
+  
+  // Preferences
+  preferredPlayStyle String  @default("hybrid") // 'flick-heavy', 'tracking-heavy', 'hybrid'
+  
+  // Test Preferences
+  defaultDuration          Int     @default(60)
+  preferredDifficulty      String  @default("medium")
+  autoStartTests           Boolean @default(false)
+  showRealTimeStats        Boolean @default(true)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testResults       SensitivityTestResult[]
+  recommendations   SensitivityRecommendation[]
+
+  @@map("sensitivity_profiles")
+}
+
+model SensitivityTestResult {
+  id          String   @id @default(cuid())
+  userId      String
+  profileId   String
+  
+  // Test Configuration
+  testType    String   // 'flick', 'tracking', 'target-switching', 'micro-correction'
+  difficulty  String
+  duration    Int
+  targetCount Int
+  targetSize  Float
+  targetSpeed Float?
+  spawnPattern String
+  
+  // Performance Metrics
+  accuracy            Float
+  averageTimeToHit    Float
+  totalHits           Int
+  totalMisses         Int
+  
+  // Advanced Metrics
+  flickOvershoot      Float @default(0)
+  flickUndershoot     Float @default(0)
+  trackingStability   Float @default(100)
+  correctionEfficiency Float @default(0)
+  reactionConsistency Float @default(0)
+  
+  // Test Environment
+  currentSensitivity  Float
+  currentDPI          Int
+  
+  // Raw Data (JSON fields)
+  hitPositions        String // JSON array of hit positions
+  mouseTrajectory     String // JSON array of mouse movements
+  targetSequence      String // JSON array of target data
+  
+  createdAt    DateTime @default(now())
+
+  profile      SensitivityProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("sensitivity_test_results")
+}
+
+model SensitivityRecommendation {
+  id               String   @id @default(cuid())
+  userId           String
+  profileId        String
+  
+  // Recommendation Data
+  playStyle        String   // 'flick-heavy', 'tracking-heavy', 'hybrid'
+  recommendedSensitivity Float
+  confidenceScore  Int      // 0-100
+  reasoning        String   // JSON array of reasons
+  
+  // Game-specific recommendations (JSON)
+  gameRecommendations String // JSON object with game-specific data
+  
+  // Performance predictions
+  expectedAccuracyImprovement    Float @default(0)
+  expectedConsistencyImprovement Float @default(0)
+  expectedReactionTimeImprovement Float @default(0)
+  
+  // Based on test results
+  basedOnResults   String   // JSON array of test result IDs
+  
+  createdAt        DateTime @default(now())
+
+  profile          SensitivityProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("sensitivity_recommendations")
+}
+
+model SensitivityConversion {
+  id              String   @id @default(cuid())
+  userId          String
+  
+  // Conversion Details
+  fromGame        String
+  toGame          String
+  fromSensitivity Float
+  toSensitivity   Float
+  fromDPI         Int
+  toDPI           Int
+  
+  // Calculation Details
+  fromCm360       Float
+  toCm360         Float
+  effectiveDPIFrom Int
+  effectiveDPITo   Int
+  
+  // Metadata
+  conversionAccuracy String // 'exact', 'approximate', 'estimated'
+  notes            String?  // Additional notes
+  
+  createdAt       DateTime @default(now())
+
+  @@map("sensitivity_conversions")
+}
+
+model SensitivityAnalytics {
+  id              String   @id @default(cuid())
+  userId          String
+  profileId       String
+  
+  // Overall Statistics
+  totalTests      Int
+  averageAccuracy Float
+  averageReactionTime Float
+  mostImprovedMetric String
+  weakestArea     String
+  strongestArea   String
+  
+  // Per-test Analytics (JSON)
+  testAnalytics   String // JSON object with per-test type stats
+  
+  // Visualization Data (JSON)
+  heatmapData     String // JSON object with heatmap points
+  performanceCharts String // JSON array of chart data
+  
+  // Recommendations
+  improvementSuggestions String // JSON array of suggestions
+  nextRecommendedTest    String
+  
+  generatedAt     DateTime @default(now())
+
+  @@map("sensitivity_analytics")
+} 

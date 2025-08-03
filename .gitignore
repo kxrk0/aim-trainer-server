@@ -1,0 +1,188 @@
+# ===============================================
+# AIM TRAINER PRO SERVER - GITIGNORE
+# ===============================================
+
+# ===============================================
+# NODE.JS
+# ===============================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output/
+
+# ===============================================
+# BUILD OUTPUTS
+# ===============================================
+# Distribution directories
+dist/
+build/
+
+# TypeScript build info
+*.tsbuildinfo
+.tsbuildinfo
+
+# ===============================================
+# ENVIRONMENT & CONFIG
+# ===============================================
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Keep example environment files
+!.env.example
+
+# ===============================================
+# DATABASE
+# ===============================================
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Prisma development database
+prisma/dev.db
+prisma/dev.db-journal
+
+# Database dumps
+*.sql.gz
+*.dump
+
+# ===============================================
+# LOGS
+# ===============================================
+# Log files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ===============================================
+# CACHE & TEMPORARY
+# ===============================================
+# Cache directories
+.cache/
+.temp/
+.tmp/
+
+# ===============================================
+# IDE & EDITORS
+# ===============================================
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ===============================================
+# OPERATING SYSTEM
+# ===============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# ===============================================
+# PM2 & DEPLOYMENT
+# ===============================================
+# PM2 runtime files
+.pm2/
+pids/
+logs/
+ecosystem.config.*.js
+
+# SSL certificates (if any)
+*.pem
+*.key
+*.crt
+
+# Backup files
+*.backup
+*.bak
+
+# Upload temp
+uploads/temp/
+
+# ===============================================
+# TESTING
+# ===============================================
+# Test coverage
+coverage/
+.nyc_output/
+
+# Jest
+.jest/
+
+# ===============================================
+# MISC
+# ===============================================
+# Miscellaneous
+*.tgz
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Temporary folders
+tmp/
+temp/
+
+# ===============================================
+# PROJECT SPECIFIC
+# ===============================================
+# Generated TypeScript declarations
+*.d.ts.map 
