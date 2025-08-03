@@ -253,6 +253,16 @@ app.get('/', (req, res) => {
   })
 })
 
+// Fallback for phantom JS files (404 prevention)
+app.get('/js/:filename', (req, res) => {
+  const filename = req.params.filename
+  console.log(`⚠️ Phantom JS file requested: ${filename}`)
+  
+  // Return empty JS response to prevent 404 errors
+  res.setHeader('Content-Type', 'application/javascript')
+  res.status(200).send('// Phantom file placeholder - no content needed')
+})
+
 // Error handling middleware (must be last)
 app.use(notFound)
 app.use(errorHandler)
