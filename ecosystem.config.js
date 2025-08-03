@@ -11,8 +11,8 @@ module.exports = {
       // ===============================================
       // PROCESS MANAGEMENT
       // ===============================================
-      instances: 2, // CPU core sayısına göre ayarlanabilir
-      exec_mode: 'cluster',
+      instances: 1, // Single instance to avoid port conflicts
+      exec_mode: 'fork', // Fork mode for single instance
       
       // ===============================================
       // ENVIRONMENT

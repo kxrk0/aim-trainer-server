@@ -76,13 +76,14 @@ npm install --production
 print_status "Building server..."
 npm run build
 
-# Check if build was successful
-if [ ! -f "dist/index.js" ]; then
-    print_error "Build failed! dist/index.js not found"
+# Check if build was successful  
+if [ ! -f "dist/src/index.js" ]; then
+    print_error "Build failed! dist/src/index.js not found"
+    ls -la dist/
     exit 1
 fi
 
-print_status "Build successful! dist/index.js created"
+print_status "Build successful! dist/src/index.js created"
 
 # Stop existing PM2 process (if running)
 print_status "Stopping existing PM2 process..."

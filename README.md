@@ -43,9 +43,14 @@ sudo ./deploy.sh
 ```bash
 NODE_ENV=production
 PORT=3002
-DATABASE_URL=postgresql://aim_user:password@localhost:5432/aim_trainer
-JWT_SECRET=your_super_secure_jwt_secret
+DATABASE_URL=postgresql://aim_user:strong_password_123@localhost:5432/aim_trainer
+JWT_SECRET=AimTrainer2025_ProVPS_SecureJWT_9f8e7d6c5b4a3928374659283746592837465928374659283746
 CORS_ORIGIN=https://aim.liorabelleleather.com
+SOCKET_IO_CORS_ORIGIN=https://aim.liorabelleleather.com
+
+# Optional Redis for caching
+# REDIS_URL=redis://localhost:6379
+# REDIS_PASSWORD=
 ```
 
 ## 🔧 API Endpoints

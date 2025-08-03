@@ -1,139 +1,104 @@
 # ===================================================
-# Liorabelle Leather - Caddyfile (Otomatik & Kapsamlı)
+# LIORABELLE LEATHER - TEMIZ & ORGANİZE CADDYFILE
 # ===================================================
-# Bu yapılandırma, SSL sertifikalarını otomatik yönetir ve
-# tüm API/WebSocket trafiğini backend'e yönlendirir.
+# Ana site + AIM TRAINER subdomain için optimize edilmiş
 # ===================================================
 
+# ===================================================
+# ANA SİTE: liorabelleleather.com
+# ===================================================
 liorabelleleather.com {
-    # ---------------------------------------------------
-    # Yönlendirme Kuralları (Öncelik sırasına göre)
-    # ---------------------------------------------------
-
-    # 1. Socket.IO WebSocket Proxy
-    # /socket.io/ yoluna gelen tüm anlık iletişim isteklerini
-    # backend'deki Socket.IO sunucusuna (port 3001) yönlendir.
-    # Caddy v2, WebSocket bağlantılarını otomatik olarak algılar ve yönetir.
+    # Yönlendirme Kuralları
     handle /socket.io/* {
         reverse_proxy localhost:3001
     }
-
-    # 2. Backend API Rotaları
-    # /api/ ile başlayan diğer tüm istekleri backend'deki ana API'ye
-    # (Node.js/Express, port 3001) yönlendir.
+    
     handle /api/* {
         reverse_proxy localhost:3001
     }
-
-    # 3. Next.js Frontend Uygulaması
-    # Yukarıdaki kurallarla eşleşmeyen diğer tüm istekleri frontend sunucusuna
-    # (Next.js, port 3000) yönlendirerek sitenin kendisini göster.
+    
+    # Next.js Frontend (port 3000)
     reverse_proxy localhost:3000
-
-    # ---------------------------------------------------
-    # Sunucu Ayarları: TLS, Sıkıştırma, Güvenlik
-    # ---------------------------------------------------
-
-    # Otomatik HTTPS: Let's Encrypt üzerinden SSL sertifikalarını yönetir.
+    
+    # SSL & Güvenlik
     tls {
         protocols tls1.2 tls1.3
     }
-
-    # Performans için sıkıştırmayı etkinleştir.
+    
     encode gzip zstd
-
-    # Tarayıcı güvenliği için standart güvenlik başlıkları.
+    
     header {
         X-Frame-Options "SAMEORIGIN"
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     }
-
-    # Loglama yapılandırması.
+    
+    # Ana site loglama
     log {
         output file /var/log/caddy/liorabelleleather.log {
             roll_size 10MB
             roll_keep 5
-            roll_keep_for 720h # 30 gün
-        }
-    }
-}
-
-# ===================================================
-# WWW Yönlendirmesi
-# www.liorabelleleather.com'u ana domaine yönlendir.
-# ===================================================
-www.liorabelleleather.com {
-    redir https://liorabelleleather.com{uri} permanent
-}
-
-# ===================================================
-# AIM TRAINER PRO - Subdomain Configuration
-# ===================================================
-# Bu konfigürasyon ana siteye hiç dokunmadan AIM TRAINER'ı
-# aim.liorabelleleather.com subdomain'inde çalıştırır.
-# ===================================================
-http://aim.liorabelleleather.com {
-    # ---------------------------------------------------
-    # AIM TRAINER Yönlendirme Kuralları
-    # ---------------------------------------------------
-
-    # 1. Socket.IO WebSocket Proxy for AIM TRAINER
-    # /socket.io/ yoluna gelen tüm anlık iletişim isteklerini
-    # AIM TRAINER backend'ine (port 3002) yönlendir.
-    handle /socket.io/* {
-        reverse_proxy localhost:3002
-    }
-
-    # 2. Backend API Routes for AIM TRAINER
-    # /api/ ile başlayan tüm istekleri AIM TRAINER API'sine yönlendir.
-    handle /api/* {
-        reverse_proxy localhost:3002
-    }
-
-    # 3. Static Files and Fallback for AIM TRAINER
-    # Diğer tüm istekleri AIM TRAINER server'ına yönlendir.
-    handle /* {
-        reverse_proxy localhost:3002
-    }
-
-    # ---------------------------------------------------
-    # AIM TRAINER Sunucu Ayarları (Cloudflare SSL İçin Optimize)
-    # ---------------------------------------------------
-
-    # HTTP kullan - Cloudflare Proxy SSL sağlıyor
-    # Let's Encrypt challenge'ı Cloudflare proxy ile çalışmaz
-
-    # Performans optimizasyonu
-    encode gzip zstd
-
-    # Güvenlik başlıkları
-    header {
-        X-Frame-Options "SAMEORIGIN"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        # HSTS kaldırıldı çünkü HTTP kullanıyoruz (Cloudflare HTTPS sağlıyor)
-        # CORS için ek başlıklar (AIM TRAINER için gerekli)
-        Access-Control-Allow-Origin "*"
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        Access-Control-Allow-Headers "Content-Type, Authorization"
-    }
-
-    # AIM TRAINER özel loglama
-    log {
-        output file /var/log/caddy/aim-trainer.log {
-            roll_size 10MB
-            roll_keep 5
-            roll_keep_for 720h # 30 gün
+            roll_keep_for 720h
         }
         format json
     }
 }
 
 # ===================================================
-# AIM TRAINER WWW Yönlendirmesi (HTTP)
+# AIM TRAINER: aim.liorabelleleather.com 
 # ===================================================
-http://www.aim.liorabelleleather.com {
-    redir https://aim.liorabelleleather.com{uri} permanent
-} 
+aim.liorabelleleather.com {
+    # Socket.IO WebSocket Proxy
+    handle /socket.io/* {
+        reverse_proxy localhost:3002
+    }
+    
+    # Backend API Routes
+    handle /api/* {
+        reverse_proxy localhost:3002
+    }
+    
+    # Static Files and Fallback
+    handle /* {
+        reverse_proxy localhost:3002
+    }
+    
+    # SSL Otomatik (Let's Encrypt)
+    # Caddy otomatik SSL sertifikası alacak
+    
+    # Performans
+    encode gzip zstd
+    
+    # Güvenlik + CORS
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        
+        # CORS başlıkları (AIM TRAINER için)
+        Access-Control-Allow-Origin "*"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Content-Type, Authorization"
+    }
+    
+    # AIM TRAINER loglama
+    log {
+        output file /var/log/caddy/aim-trainer.log {
+            roll_size 10MB
+            roll_keep 5
+            roll_keep_for 720h
+        }
+        format json
+    }
+}
+
+# ===================================================
+# WWW YÖNLENDİRMELERİ
+# ===================================================
+
+# Ana site www yönlendirmesi
+www.liorabelleleather.com {
+    redir https://liorabelleleather.com{uri} permanent
+}

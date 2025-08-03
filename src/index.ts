@@ -9,7 +9,7 @@ import { Server as SocketIOServer } from 'socket.io'
 import passport from 'passport'
 
 import { errorHandler, notFound } from './middleware/errorHandler'
-import { initializeDatabase, closeDatabase } from './config/database'
+import { initializeDatabase, closeDatabase, prisma, redisClient } from './config/database'
 import { initializeFirebaseAdmin } from './services/firebaseAdmin'
 import { socketFirebaseAuth } from './middleware/firebaseAuth'
 import { logger } from './utils/logger'
@@ -129,13 +129,53 @@ app.use(session({
 app.use(passport.initialize() as any)
 app.use(passport.session() as any)
 
-// Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  })
+// Health check endpoint
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    const health = {
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0',
+      uptime: process.uptime(),
+      services: {
+        database: 'unknown',
+        redis: 'unknown',
+        socketio: 'OK'
+      }
+    }
+
+    // Check database connection
+    try {
+      await prisma.$queryRaw`SELECT 1`
+      health.services.database = 'OK'
+    } catch (dbError) {
+      health.services.database = 'ERROR'
+      health.status = 'DEGRADED'
+    }
+
+    // Check Redis connection (if enabled)
+    if (redisClient) {
+      try {
+        await redisClient.ping()
+        health.services.redis = 'OK'
+      } catch (redisError) {
+        health.services.redis = 'ERROR'
+        // Redis is optional, don't mark as degraded
+      }
+    } else {
+      health.services.redis = 'DISABLED'
+    }
+
+    const statusCode = health.status === 'OK' ? 200 : 503
+    res.status(statusCode).json(health)
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      timestamp: new Date().toISOString(),
+      error: 'Health check failed'
+    })
+  }
 })
 
 // API routes
@@ -194,6 +234,22 @@ io.on('connection', (socket) => {
   // Handle errors
   socket.on('error', (error) => {
     console.error(`❌ Socket error for ${username}:`, error)
+  })
+})
+
+// Root route - API info endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: '🎯 AIM TRAINER PRO API Server',
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      api: '/api',
+      socket: '/socket.io'
+    },
+    environment: process.env.NODE_ENV || 'development'
   })
 })
 

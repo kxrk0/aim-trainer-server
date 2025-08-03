@@ -7,11 +7,11 @@ export const prisma = new PrismaClient({
   log: ['query', 'info', 'warn', 'error'],
 })
 
-// Redis configuration
-export const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379',
-  password: process.env.REDIS_PASSWORD
-})
+// Redis configuration - Only create if URL is provided
+export const redisClient = process.env.REDIS_URL ? createClient({
+  url: process.env.REDIS_URL,
+  password: process.env.REDIS_PASSWORD || undefined,
+}) : null
 
 // Configuration object
 export const config = {
@@ -38,10 +38,10 @@ export const initializeDatabase = async (): Promise<void> => {
   try {
     // Test Prisma connection
     await prisma.$connect()
-    logger.info('✅ SQLite connected successfully')
+    logger.info('✅ PostgreSQL connected successfully')
 
     // Redis connection (optional for development)
-    if (process.env.REDIS_URL) {
+    if (redisClient) {
       redisClient.on('error', (err) => {
         logger.error('❌ Redis Client Error:', err)
       })
@@ -70,7 +70,7 @@ export const closeDatabase = async (): Promise<void> => {
     await prisma.$disconnect()
     
     // Only try to disconnect Redis if it was connected
-    if (process.env.REDIS_URL && redisClient.isOpen) {
+    if (redisClient && redisClient.isOpen) {
       await redisClient.quit()
     }
     
