@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Configuration
 PROJECT_DIR="/opt/aim-trainer-server"
 LOG_DIR="/var/log/aim-trainer"
-REPO_URL="https://github.com/USERNAME/aim-trainer-server.git" # Bu URL'yi güncelleyin
+REPO_URL="https://github.com/kxrk0/aim-trainer-server.git"
 BRANCH="main"
 PM2_APP_NAME="aim-trainer-pro"
 
